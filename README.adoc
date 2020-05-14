@@ -1,0 +1,7 @@
+= Arduino FourBitDisplay library
+
+A simple library to display text on a 7 segment display. More information can be found
+https://blog.monotok.org/arduino-using-c-to-write-7-segment-4-bit-display-driver/[Monotok Blog]
+
+This library structure was created in Clion, hence the CMAKE.
+
