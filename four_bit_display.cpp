@@ -18,86 +18,100 @@ FourBitDisplay::FourBitDisplay(short rclk, short sclk, short dio)
 
 byte FourBitDisplay::getBits(char val)
 {
-    byte b;
+/*
+This is slightly quicker by a few microseconds than a switch statement.
+This is an ASCII lookup table. The reason it includes all off statements before
+the 0 is because it allows me to turn off any rubbish that gets printed to the display.
+Adding any more items to the lookup table does not hamper performance.
+*/
 
-    if(val != 'c')
-    {
-        val = toupper(val);
-    }
 
-    switch(val)
-    {
-        case 'A':
-            b = 0b10001000;
-            break;
-        case 'B':
-            b = 0b10000011;
-            break;
-        case 'C':
-            b = 0b11000110;
-            break;
-        case 'c':
-            b = 0b10100111;
-            break;
-        case 'D':
-            b = 0b10100001;
-            break;
-        case 'E':
-            b = 0b10000110;
-            break;
-        case 'F':
-            b = 0b10001110;
-            break;
-        case '0':
-            b = 0b11000000;
-            break;
-        case '1':
-            b = 0b11111001;
-            break;
-        case '2':
-            b = 0b10100100;
-            break;
-        case '3':
-            b = 0b10110000;
-            break;
-        case '4':
-            b = 0b10011001;
-            break;
-        case '5':
-            b = 0b10010010;
-            break;
-        case '6':
-            b = 0b10000010;
-            break;
-        case '7':
-            b = 0b11111000;
-            break;
-        case '8':
-            b = 0b10000000;
-            break;
-        case '9':
-            b = 0b10010000;
-            break;
-        case '.':
-            b = 0b01111111;
-            break;
-        case '-':
-            b = 0b10111111;
-            break;
-        default:
-            b = 0b11111111;
-    }
+    const static byte bits[] =
+            {
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b10111111, //-
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11000000, //0
+                    0b11111001, //1
+                    0b10100100, //2
+                    0b10110000, //3
+                    0b10011001, //4
+                    0b10010010, //5
+                    0b10000010, //6
+                    0b11111000, //7
+                    0b10000000, //8
+                    0b10010000, //9
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b11111111, //off
+                    0b10001000, //A
+                    0b10000011, //B
+                    0b11000110, //C
+                    0b10100001, //D
+                    0b10000110, //E
+                    0b10001110 //F
+            };
 
-    return b;
+    return bits[val];
 }
 
-void FourBitDisplay::printToDisplay(char* value, char *justify)
+void FourBitDisplay::printToDisplay(char* value, short arraySize ,char *justify)
 {
+    shiftOut(_dioPin, _sclkPin, MSBFIRST, 0b11111111); //Clear the display
     if(*justify == 'r')
     {
         size_t len = strlen(value);
         char *t = value + len-1;
-        char reversed[sizeof(value)];
+        char reversed[arraySize];
         short num = 0;
 
         while(t >= value)
@@ -108,32 +122,61 @@ void FourBitDisplay::printToDisplay(char* value, char *justify)
         }
 
         const char *digitalPins = "1248";
-        for(unsigned short s = 0; s <4; s++)
+        for(unsigned short s = 0; s <arraySize; s++)
         {
             digitalWrite(_rclkPin, LOW);
             // shift out the bits:
 
-            shiftOut(_dioPin, _sclkPin, MSBFIRST, getBits(reversed[s]));
+            if(reversed[s] == '.')
+            {
+                byte byteWithDot = (getBits(reversed[s+1]) & 0b01111111);
+                shiftOut(_dioPin, _sclkPin, MSBFIRST, byteWithDot);
+
+                for(unsigned short f = s+1; f <= arraySize; f++)
+                {
+                    reversed[f] = reversed[f+1];
+                }
+
+            }
+            else
+            {
+                shiftOut(_dioPin, _sclkPin, MSBFIRST, getBits(reversed[s]));
+            }
 
             shiftOut(_dioPin, _sclkPin, MSBFIRST, digitalPins[s]);
 
             //take the latch pin high so the LEDs will light up:
+
             digitalWrite(_rclkPin, HIGH);
         }
     }
     else
     {
         const char *digitalPins = "8421";
-        for(unsigned short s = 0; s <4; s++)
+        for(unsigned short s = 0; s <arraySize; s++)
         {
             digitalWrite(_rclkPin, LOW);
             // shift out the bits:
 
-            shiftOut(_dioPin, _sclkPin, MSBFIRST, getBits(value[s]));
+            if(value[s+1] == '.')
+            {
+                byte byteWithDot = (getBits(value[s]) & 0b01111111);
+                shiftOut(_dioPin, _sclkPin, MSBFIRST, byteWithDot);
 
+                for(unsigned short f = s+1; f <= arraySize; f++)
+                {
+                    value[f] = value[f+1];
+                }
+
+            }
+            else
+            {
+                shiftOut(_dioPin, _sclkPin, MSBFIRST, getBits(value[s]));
+            }
             shiftOut(_dioPin, _sclkPin, MSBFIRST, digitalPins[s]);
 
             //take the latch pin high so the LEDs will light up:
+
             digitalWrite(_rclkPin, HIGH);
         }
     }

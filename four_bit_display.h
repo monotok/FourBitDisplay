@@ -43,7 +43,8 @@ class FourBitDisplay
 public:
     FourBitDisplay(short rclk, short sclk, short dio);
     byte getBits(char val);
-    void printToDisplay(char* value, char *justify);
+    void printToDisplay(char *value, short arraySize, char *justify);
+
 private:
     short _rclkPin;
     short _sclkPin;
