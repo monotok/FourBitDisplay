@@ -33,10 +33,8 @@ To display just one C on the right then it will be:
 0b11110001
 
 */
-#ifndef
-_FOUR_BIT_DISPLAY_H_
-#define
-_FOUR_BIT_DISPLAY_H_
+#ifndef _FOUR_BIT_DISPLAY_H_
+#define _FOUR_BIT_DISPLAY_H_
 
 class FourBitDisplay
 {
